@@ -1,6 +1,11 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
+
 
 app = Flask(__name__)
+
+CORS(app, origins=["https://tably.webflow.io"])
+
 
 # Define your Python logic
 def run_python_code(data):
