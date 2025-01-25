@@ -1,53 +1,38 @@
-import streamlit as st
-from openai import OpenAI
+from flask import Flask, request, jsonify, make_response
 
-# Show title and description.
-st.title("📄 Document question answering")
-st.write(
-    "Upload a document below and ask a question about it – GPT will answer! "
-    "To use this app, you need to provide an OpenAI API key, which you can get [here](https://platform.openai.com/account/api-keys). "
-)
+from flask_cors import CORS
 
-# Ask user for their OpenAI API key via `st.text_input`.
-# Alternatively, you can store the API key in `./.streamlit/secrets.toml` and access it
-# via `st.secrets`, see https://docs.streamlit.io/develop/concepts/connections/secrets-management
-openai_api_key = st.text_input("OpenAI API Key", type="password")
-if not openai_api_key:
-    st.info("Please add your OpenAI API key to continue.", icon="🗝️")
-else:
 
-    # Create an OpenAI client.
-    client = OpenAI(api_key=openai_api_key)
+app = Flask(__name__)
 
-    # Let the user upload a file via `st.file_uploader`.
-    uploaded_file = st.file_uploader(
-        "Upload a document (.txt or .md)", type=("txt", "md")
-    )
+CORS(app, origins=["https://tably.webflow.io"])
 
-    # Ask the user for a question via `st.text_area`.
-    question = st.text_area(
-        "Now ask a question about the document!",
-        placeholder="Can you give me a short summary?",
-        disabled=not uploaded_file,
-    )
 
-    if uploaded_file and question:
+# Define your Python logic
+def run_python_code(data):
 
-        # Process the uploaded file and question.
-        document = uploaded_file.read().decode()
-        messages = [
-            {
-                "role": "user",
-                "content": f"Here's a document: {document} \n\n---\n\n {question}",
-            }
-        ]
+    json_data = request.get_json()
+    response = make_response(jsonify({"message": json_data}))
+    response.headers['Access-Control-Allow-Origin'] = 'https://tably.webflow.io'
+    response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    return response
 
-        # Generate an answer using the OpenAI API.
-        stream = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=messages,
-            stream=True,
-        )
-
-        # Stream the response to the app using `st.write_stream`.
-        st.write_stream(stream)
+@app.route('/execute', methods=['POST'])
+def execute():
+    try:
+        # Parse the JSON payload
+        json_data = request.get_json()
+        # Process the input data (replace this with your logic)
+        result = f"Received: {json_data}"
+        
+        # Create a response object with CORS headers
+        response = make_response(jsonify({"message": result}))
+        response.headers['Access-Control-Allow-Origin'] = 'https://tably.webflow.io'
+        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        return response
+    except Exception as e:
+        response = make_response(jsonify({"error": str(e)}), 500)
+        response.headers['Access-Control-Allow-Origin'] = 'https://tably.webflow.io'
+        return response
